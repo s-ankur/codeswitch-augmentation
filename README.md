@@ -1,8 +1,5 @@
-# NLP-HW3
-Hateful speech classification on Indic languages 
+# Exploring the Limits of Data Augmentation in
+Low-Resource Code-Switched Language
 
-StandAloneTraining.py - This is reimplemented code, we have made changes to ensure label encoding, data cleaning, hyper parameter changes.
+Our submission for the CS769 Project 
 
-Augmentation.ipynb : This notebook houses the code that performs augmentation and interacts with the StandAloneTraining to generate results
-
-Please request for data - Kannada-English, Malayalam-English, Tamil-English
