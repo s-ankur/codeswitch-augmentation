@@ -1,8 +1,6 @@
-#!pip install transformers
-#!pip install sentencepiece
-#!pip install emoji
 
-
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning) 
 import torch
 import torch.nn as nn
 import json
@@ -29,6 +27,8 @@ from torch.utils.data import TensorDataset, RandomSampler, SequentialSampler, Da
 from sklearn.metrics import *
 from sklearn.utils import *
 from sklearn import preprocessing
+
+import sys
 
 # If there's a GPU available...
 if torch.cuda.is_available():
@@ -91,9 +91,9 @@ def getFeaturesandLabel(X,y):
     attention_masks_data = create_attention_masks(input_ids)
     X_data = torch.tensor(input_ids)
     attention_masks_data = torch.tensor(attention_masks_data)
-    print(y)
+
     y_data = torch.tensor(y)
-    print(y_data.dtype,y_data)
+
     return X_data, attention_masks_data, y_data
 
 
@@ -153,7 +153,6 @@ class SC_weighted_BERT(BertPreTrainedModel):
         )
        
         pooled_output = outputs[1]
-        #print("jnd")
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 
@@ -205,35 +204,18 @@ fix_the_random(2021)
 
 import pandas as pd
 # Change The Datasets as Per Your requirement
+import sys
+trainData =  pd.read_csv(sys.argv[1],  encoding='utf-8',)
+valData =  pd.read_csv(sys.argv[2], encoding='utf-8', )
+testData =  pd.read_csv(sys.argv[3],encoding='utf-8',)
 
-trainData =  pd.read_csv("kannada_offensive_train.csv", sep='\t', names=['text', 'label'], header=None, encoding='utf-8', error_bad_lines=False)
-valData =  pd.read_csv("kannada_offensive_dev.csv", sep='\t', names=['text', 'label'], header=None, encoding='utf-8', error_bad_lines=False)
-testData =  pd.read_csv("kannada_offensive_test.csv", sep='\t', names=['text', 'label'], header=None,encoding='utf-8', error_bad_lines=False)
 
-trainData = trainData[trainData['label'] != 'not-Kannada']
-valData = valData[valData['label'] != 'not-Kannada']
-testData = testData[testData['label'] != 'not-Kannada']
-
-#trainData =  pd.read_csv("tamil_offensive_full_train.csv", sep='\t', names=['text', 'label','redun'], header=None, encoding='utf-8', error_bad_lines=False)
-#valData =  pd.read_csv("tamil_offensive_full_dev.csv", sep='\t', names=['text', 'label','redun'], header=None, encoding='utf-8', error_bad_lines=False)
-#testData =  pd.read_csv("tamil_offensive_full_test.csv", sep='\t', names=['text', 'label','redun'], header=None,encoding='utf-8', error_bad_lines=False)
-
-#trainData = trainData[trainData['label'] != 'not-malayalam']
-#valData = valData[valData['label'] != 'not-malayalam']
-#testData = testData[testData['label'] != 'not-malayalam']
 
 trainData['label'] = trainData['label'].apply(lambda x: 0 if x == 'Not_offensive' else 1)
 valData['label'] = valData['label'].apply(lambda x: 0 if x == 'Not_offensive' else 1)
 testData['label'] = testData['label'].apply(lambda x: 0 if x == 'Not_offensive' else 1)
 
-print("Train labels count:")
-print(trainData['label'].value_counts())
 
-print("Val labels count:")
-print(valData['label'].value_counts())
-
-print("Test labels count:")
-print(testData['label'].value_counts())
 
 # features: X
 # ground truth: y
@@ -254,10 +236,10 @@ veParams={
     'learning_rate':2e-5,
     'epsilon':1e-8,
     'random_seed':30,
-    'epochs':10,
-    'to_save':True,
+    'epochs': 1,
+    'to_save':False,
     'frac':0.8,
-    'outputDir':'/content/drive/MyDrive/IndicLang/Kannada/Code-Mixed/'
+    'outputDir':sys.argv[4]
 }
 
 tokenizer = BertTokenizer.from_pretrained(veParams['path_files'], do_lower_case = True)
@@ -298,7 +280,6 @@ def select_model(type_of_model,path,weights=None,label_list=None):
 label_y_tn = le.fit_transform(y_tn)
 class_weights = [sum(label_y_tn)/len(label_y_tn), 1 - sum(label_y_tn)/len(label_y_tn)]
 
-print(class_weights, "HW")
 
 torch.cuda.empty_cache()
 
@@ -507,12 +488,12 @@ plt.title("Training loss")
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 
-plt.show()
+plt.savefig(veParams['outputDir']+"/loss.png")
 
-besttest_df.head()
+
 
 testData['pred']=besttest_df['target']
 
 print(evalMetric(list(testData['label']), list(testData['pred'])))
 
-testData.to_csv(veParams['outputDir']+"kaEn_test_pred.csv",index=False)
+testData.to_csv(veParams['outputDir']+"/test_pred.csv",index=False)
